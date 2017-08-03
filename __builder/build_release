@@ -1,0 +1,94 @@
+#!/bin/bash
+
+set -e
+#set -x
+
+source __common
+
+#[ "$NEWBUILD" == '1' ] && _set_new_time
+_set_new_time
+_get_time
+
+_create_release_zip() {
+  echo "_create_release_zip"
+  if [ -e "$VERSION_DIR1" ]; then
+    mv "$VERSION_DIR1" "${VERSION_DIR1}.bak"
+  fi
+  mkdir -p "$VERSION_DIR1"
+
+  cd "$SRC_DIR"
+#VERSION=$(git describe --tags --abbrev=0)
+  git archive $BRANCH --format=zip --prefix="$MODULE_NAME/" --output="${VERSION_DIR1}/${RELEASE_FILENAME}"
+
+  cd ${VERSION_DIR1}
+  md5sum "${RELEASE_FILENAME}" > "${RELEASE_FILENAME}.md5"
+  cp "$TIME_FILE" .
+
+  cd "$BUILDER_DIR"
+}
+
+_get_tag_name() {
+  echo "v$TEMPLATE_VER"
+}
+
+_clear_tag() {
+  echo "${FUNCNAME[0]}"
+  if [ "$NEWBUILD" == '1' ] ; then
+    if git rev-list --tags "$TAG" >/dev/null 2>&1 ; then
+      git tag --delete "$TAG"
+    fi
+  fi
+}
+
+_add_tag() {
+  echo "${FUNCNAME[0]}"
+  [ "$TAG" == '' ] && return 1
+
+  if [ "$NEWBUILD" == '1' ] ; then
+    git tag "$TAG"
+  fi
+}
+
+_commit_release() {
+  echo "${FUNCNAME[0]}"
+  git l-cmd-checkout '' _fix && \
+  if git ci -am "Release: ${TAG} (${TIME_LABEL})"; then 
+    git w-apply-fix
+  fi
+}
+
+_copy_last_zip_to_release_dir() {
+  echo "${FUNCNAME[0]}"
+  [ "$NEWBUILD" == '0' ] && return 0
+
+  [ ! -d "$VERSION_DIR2" ] && mkdir -p "$VERSION_DIR2" 
+  cp -RT "$VERSION_DIR1/" "$VERSION_DIR2/" || return 1
+
+  [ -d "$LATEST_DIR" ] && rm -rf "$LATEST_DIR" 
+  cp -RT "$VERSION_DIR2/" "$LATEST_DIR/"
+}
+
+TAG=$(_get_tag_name)
+
+VERSION_DIR1="${TMP_RELEASES_DIR}/V${TEMPLATE_VER}/${TIME_LABEL}"
+VERSION_DIR2="${RELEASE_DIR}/V${TEMPLATE_VER}/${TIME_LABEL}"
+LATEST_DIR="${RELEASE_DIR}/latest"
+
+#RELEASE_FILENAME="${MODULE_NAME}-${TEMPLATE_VER}.zip"
+RELEASE_FILENAME="${MODULE_NAME}.zip"
+RELEASE_FILE="${VERSION_DIR1}/${RELEASE_FILENAME}"
+
+./_add_index_php              || exit_if_error $? '$0 _add_index_php'
+./_update_comments            || exit_if_error $? '$0 _update_comments'
+_clear_tag                    || exit_if_error $? '$0 _clear_tag'
+_commit_release               || exit_if_error $? '$0 _commit_release'
+_add_tag                      || exit_if_error $? '$0 _add_tag' 
+_create_release_zip           || exit_if_error $? '$0 _create_release_zip'
+_copy_last_zip_to_release_dir || exit_if_error $? '$0 _copy_last_zip_to_release_dir'
+
+if [ "$NEWBUILD" = '0' ]; then
+    __reset_cfg_master        || exit_if_error $? '$0 __reset_cfg_master'
+else
+    git last
+fi
+

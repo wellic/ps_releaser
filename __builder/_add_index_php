@@ -1,0 +1,25 @@
+#!/bin/bash
+
+force=${1:-0}
+[ "$force" == '-f' ] && force=1
+
+set -e
+#set -x
+
+source __common
+
+echo -e 'Adding file: index.php'
+
+declare -a p="$(find "$SRC_DIR" -type d | sort)"
+
+for d in ${p[@]}; do 
+  f="$d/index.php"
+  if [ ! -f "$f" -o "$force" == '1' ]; then
+    echo "Added into dir: $d"
+    cp index.php "$f"
+#  else
+#    echo "Exists in: $d "
+  fi
+done
+
+#echo "Don't forget commit!!!"

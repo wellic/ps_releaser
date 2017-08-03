@@ -1,0 +1,46 @@
+*.doc   diff=astextplain
+*.DOC   diff=astextplain
+*.docx  diff=astextplain
+*.DOCX  diff=astextplain
+*.dot   diff=astextplain
+*.DOT   diff=astextplain
+*.pdf   diff=astextplain
+*.PDF   diff=astextplain
+*.rtf   diff=astextplain
+*.RTF   diff=astextplain
+
+*.jpg binary
+*.png binary
+*.gif binary
+*.odg binary
+*.zip binary
+*.gz  binary
+*.rar binary
+*.xcf binary
+
+##############################
+#export
+##############################
+.gitignore      export-ignore
+.gitkeep        export-ignore
+.gitattributes  export-ignore
+.changelog.*    export-ignore
+*.css.map       export-ignore
+# scss/           export-ignore
+logo.xcf        export-ignore
+logo.png.old    export-ignore
+
+config*.xml      export-ignore
+
+__*/           export-ignore 
+translations/           export-ignore 
+translations/_test.php  export-ignore
+demo/           export-ignore
+
+#off
+HelperShop.php     export-ignore
+HelperSearch.php   export-ignore
+
+* export-stub
+
+#pattern  export-ignore

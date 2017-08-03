@@ -1,0 +1,65 @@
+
+#set -x
+
+NEWBUILD=${1:-0}
+
+DEBUG=1
+
+BUILDER_DIR=$(readlink -m "$PWD")
+BUILDER_DIR=${BUILDER_DIR%/}
+
+source "$BUILDER_DIR/__template"
+
+RELEASE_DIR="${BUILDER_DIR}/_releases"
+RELATIVE_PATH_TO_MODULES='/../modules'
+
+TMP_RELEASES_DIR="${BUILDER_DIR}/_tmp_releases"
+TIME_FILE="$TMP_RELEASES_DIR/latest_time"
+
+[ "$NEWBUILD" == '-f'   ] && NEWBUILD=1
+[ "$FORCEBUILD" == '-f' ] && FORCEBUILD=1
+
+exit_if_error() {
+  MESS=${2:-}
+  [[ $1 != "0" ]] && echo "Error!!! Code=$1";echo "$MESS"; exit 1
+  exit 0
+}
+
+BRANCH=_fix
+
+RELEASE_DIR=$(readlink -m "$RELEASE_DIR")
+SRC_DIR=$(readlink -m  "${BUILDER_DIR}${RELATIVE_PATH_TO_MODULES}/${MODULE_NAME}")
+
+MAIN_FILE="$SRC_DIR/${MODULE_NAME}.php"
+t1="'"
+if [ -e "$MAIN_FILE" ]; then 
+  TEMPLATE_VER=$(               cat "$MAIN_FILE" | sed -nr "s/.*(const PLUGIN_VERSION|this->version)\s.*${t1}\s*(.*?)\s*${t1}.*/\2/p")
+  TEMPLATE_PLUGIN_AUTHOR=$(     cat "$MAIN_FILE" | sed -nr "s/.*(const PLUGIN_AUTHOR|this->author)\s.*${t1}\s*(.*?)\s*${t1}.*/\2/p")
+  TEMPLATE_PLUGIN_AUTHOR_URI=$( cat "$MAIN_FILE" | sed -nr "s/.*(const PLUGIN_AUTHOR_URI|this->author_uri)\s.*${t1}\s*(.*?)\s*${t1}.*/\2/p")
+  TEMPLATE_PLUGIN_AUTHOR_SITE=$(cat "$MAIN_FILE" | sed -nr "s/.*(const PLUGIN_AUTHOR_SITE|this->author_site)\s.*${t1}\s*(.*?)\s*${t1}.*/\2/p")
+  TEMPLATE_PLUGIN_MODULE_DESC=$(cat "$MAIN_FILE" | sed -nr "s/.*this->displayName\s.*${t1}\s*(.*?)\s*${t1}.*/\1/p")
+
+  TEMPLATE_AUTHOR=$TEMPLATE_PLUGIN_AUTHOR
+  TEMPLATE_MODULE_DESC=$TEMPLATE_PLUGIN_MODULE_DESC
+  TEMPLATE_MAIN_SITE=$TEMPLATE_PLUGIN_AUTHOR_SITE
+  TEMPLATE_MASK="$INITIAL_MASK|\*\s*$TEMPLATE_MODULE_DESC"
+fi
+
+TEMPLATE_VER=${TEMPLATE_VER:-$TEMPLATE_VER_DEV}
+[ "$NEWBUILD" == '1' ] || TEMPLATE_VER+=".beta"
+
+_set_new_time() {
+  NOW=$(LANG=en date -u)
+  echo "$NOW" > "$TIME_FILE"
+}
+
+_get_time() {
+  [ ! -e "$TIME_FILE" ] && _set_new_time
+  NOW="$(cat "$TIME_FILE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+  TIME_LABEL=$(LANG=en date --date="$NOW" "+%Y%m%d_%H%M%S")
+  YEAR=$(LANG=en date --date="$NOW" "+%Y")
+#  [ "$NEWBUILD" == '1' ] && DATE=$NOW || DATE=$(LANG=en date --date="$NOW" "+%a %b %d, %Y")
+  DATE=$(LANG=en date --date="$NOW" "+%b %d, %Y")
+}
+

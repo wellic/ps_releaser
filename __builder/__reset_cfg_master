@@ -1,0 +1,5 @@
+
+git l-cmd-checkout '' _cfg   && git reset --hard origin/master
+git l-cmd-checkout '' master && git reset --hard origin/master
+git co _fix
+git last

@@ -1,0 +1,56 @@
+MODULE_NAME=moduleName
+
+INITIAL_NAME="wellic"
+INITIAL_MASK="copyright $INITIAL_NAME"
+INITIAL_SITE="https://github.com/wellic"
+TEMPLATE_VER_DEV='1.x.y'
+
+TEMPLATE_AUTHOR=${TEMPLATE_AUTHOR:-"$INITIAL_NAME"}
+TEMPLATE_MODULE_DESC=${TEMPLATE_MODULE_DESC:-"$INITIAL_MASK"}
+TEMPLATE_MAIN_SITE=${TEMPLATE_MAIN_SITE:-"$INITIAL_SITE"}
+TEMPLATE_VER=$TEMPLATE_VER_DEV
+TEMPLATE_MASK="$INITIAL_MASK|\*\s*$TEMPLATE_MODULE_DESC"
+
+_template() {
+  local COPYRIGHT=$(cat<<TEMPLATE
+ * $TEMPLATE_MODULE_DESC
+ *
+ * @version v$TEMPLATE_VER ($DATE)
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License (AFL 3.0)
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/afl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@prestashop.com so we can send you a copy immediately.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    $TEMPLATE_AUTHOR ($TEMPLATE_MAIN_SITE)
+ *  @copyright $YEAR $TEMPLATE_AUTHOR
+ *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ *  International Registered Trademark & Property of PrestaShop SA
+TEMPLATE
+)
+  echo -E "$COPYRIGHT" | perl -p0e '$_=quotemeta;s/\\\n/\\n/sgm;'
+}
+
+_update_comments() {
+  local s="[\/{]\*"
+  local e="\*[\/}]"
+  local p="(?:(?!${e}).)*"
+  SRC="(${s})${p}?(?:${TEMPLATE_MASK})${p}?(${e})\s*"
+  TMPL="\$1*\n$(_template) \$2\n\n"
+  #echo -e "$TMPL"
+  cmd="find "${SRC_DIR}" -type f -exec perl -i -p0e 's/${SRC}/${TMPL}/si' {} \;"
+  #echo "$cmd"
+  eval "$cmd"
+  echo
+}

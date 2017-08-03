@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+#set -x
+
+source __common
+
+_get_time
+
+#if [ "$DEBUG" != '0' ]; then 
+#  echo -e "$(_template)"
+#  exit
+#fi
+
+_update_comments
